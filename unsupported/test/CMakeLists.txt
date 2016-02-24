@@ -174,7 +174,7 @@ endif()
 
 # These tests needs nvcc
 find_package(CUDA 7.0)
-if(CUDA_FOUND AND EIGEN_TEST_NVCC)
+if(CUDA_FOUND AND EIGEN_TEST_CUDA)
   # Mke sure to compile without the -pedantic and -Wundef flags since they trigger thousands of compilation warnings in the CUDA runtime
   string(REPLACE "-pedantic" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
   string(REPLACE "-Wundef" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -185,6 +185,11 @@ if(CUDA_FOUND AND EIGEN_TEST_NVCC)
   endif()
   set(CUDA_NVCC_FLAGS "-std=c++11 --relaxed-constexpr -arch compute_${EIGEN_CUDA_COMPUTE_ARCH} -Xcudafe \"--display_error_number\"")
   cuda_include_directories("${CMAKE_CURRENT_BINARY_DIR}" "${CUDA_TOOLKIT_ROOT_DIR}/include")
+
+  if(EIGEN_INTEGRATED_CUDA_COMPILER)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 --cuda-gpu-arch=sm_30 --cuda-allow-std-complex")
+  endif()
+
   set(EIGEN_ADD_TEST_FILENAME_EXTENSION "cu")
 
   ei_add_test(cxx11_tensor_device)
@@ -194,15 +199,14 @@ if(CUDA_FOUND AND EIGEN_TEST_NVCC)
   ei_add_test(cxx11_tensor_argmax_cuda)
   ei_add_test(cxx11_tensor_cast_float16_cuda)
 
-  # The random number generation code requires arch 3.5 or greater.
-  if (${EIGEN_CUDA_COMPUTE_ARCH} GREATER 34)
-    ei_add_test(cxx11_tensor_random_cuda)
-  endif()
+  set(CUDA_NVCC_FLAGS "-std=c++11 --relaxed-constexpr -arch compute_53 -Xcudafe \"--display_error_number\"")
 
-  # Operations other that casting of half floats are only supported starting with arch 5.3
-  if (${EIGEN_CUDA_COMPUTE_ARCH} GREATER 52)
-    ei_add_test(cxx11_tensor_of_float16_cuda)
-  endif()
+  # Clang doesn't yet support sm_53; uncomment this once it does.
+  # if(EIGEN_INTEGRATED_CUDA_COMPILER)
+  #   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" -cuda-gpu-arch=sm_53")
+  # endif()
+
+  ei_add_test(cxx11_tensor_of_float16_cuda)
 
   unset(EIGEN_ADD_TEST_FILENAME_EXTENSION)
 endif()
