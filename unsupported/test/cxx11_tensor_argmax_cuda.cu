@@ -10,6 +10,7 @@
 // TODO(mdevin): Free the cuda memory.
 
 #define EIGEN_TEST_FUNC cxx11_tensor_cuda
+#define EIGEN_TEST_NO_LONGDOUBLE  // CUDA doesn't support long double
 #define EIGEN_USE_GPU
 
 #include "main.h"
