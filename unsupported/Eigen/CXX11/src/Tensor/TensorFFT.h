@@ -11,7 +11,7 @@
 #define EIGEN_CXX11_TENSOR_TENSOR_FFT_H
 
 // NVCC fails to compile this code
-#if !defined(__CUDACC__)
+#if !defined(__CUDACC__) && !defined(EIGEN_COMP_CUDA_CLANG)
 
 namespace Eigen {
 

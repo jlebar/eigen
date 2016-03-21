@@ -35,7 +35,6 @@
   #define EIGEN_COMP_CLANG 0
 #endif
 
-
 /// \internal EIGEN_COMP_LLVM set to 1 if the compiler backend is llvm
 #if defined(__llvm__)
   #define EIGEN_COMP_LLVM 1
@@ -106,6 +105,16 @@
   #define EIGEN_COMP_EMSCRIPTEN 0
 #endif
 
+/// \internal EIGEN_COMP_CUDA_CLANG set to 1 if doing CUDA compilation with
+/// clang (host or device side).  Simply checking __clang__ is insufficient,
+/// because nvcc may preprocess device code with $host_compiler -E, and
+/// $host_compiler may be clang!  __CUDA__ is only defined when clang is
+/// actually a bona fide CUDA compiler.
+#if defined(__clang__) && defined(__CUDA__)
+  #define EIGEN_COMP_CUDA_CLANG 1
+#else
+  #define EIGEN_COMP_CUDA_CLANG 0
+#endif
 
 /// \internal EIGEN_GNUC_STRICT set to 1 if the compiler is really GCC and not a compatible compiler (e.g., ICC, clang, mingw, etc.)
 #if EIGEN_COMP_GNUC && !(EIGEN_COMP_CLANG || EIGEN_COMP_ICC || EIGEN_COMP_MINGW || EIGEN_COMP_PGI || EIGEN_COMP_IBM || EIGEN_COMP_ARM || EIGEN_COMP_EMSCRIPTEN)
@@ -362,16 +371,19 @@
 // Does the compiler support variadic templates?
 #if __cplusplus > 199711L || EIGEN_COMP_MSVC >= 1900
 // Disable the use of variadic templates when compiling with nvcc on ARM devices:
-// this prevents nvcc from crashing when compiling Eigen on Tegra X1
-#if !defined(__NVCC__) || !EIGEN_ARCH_ARM_OR_ARM64
+// this prevents nvcc from crashing when compiling Eigen on Tegra X1.  clang
+// pretends to be nvcc, so we have to check for it explicitly.
+#if defined(__clang__) || !defined(__NVCC__) || !EIGEN_ARCH_ARM_OR_ARM64
 #define EIGEN_HAS_VARIADIC_TEMPLATES 1
 #endif
 #endif
 
 // Does the compiler support const expressions?
 #ifdef __CUDACC__
-// Const expressions are supported provided that c++11 is enabled and we're using nvcc 7.5 or above
-#if defined(__CUDACC_VER__) &&  __CUDACC_VER__ >= 70500 && __cplusplus > 199711L
+// constexpr is supported provided that c++11 is enabled and we're using clang
+// or nvcc 7.5+.
+#if __cplusplus > 199711L && defined(__CUDACC_VER__) && \
+    (defined(__clang__) || __CUDACC_VER__ >= 70500)
   #define EIGEN_HAS_CONSTEXPR 1
 #endif
 #elif (defined(__cplusplus) && __cplusplus >= 201402L) || \

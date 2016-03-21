@@ -42,12 +42,6 @@
   
 #endif
 
-#if defined(__CUDA_ARCH__)
-  #define EIGEN_USING_STD_MATH(FUNC) using ::FUNC;
-#else
-  #define EIGEN_USING_STD_MATH(FUNC) using std::FUNC;
-#endif
-
 #if (defined(_CPPUNWIND) || defined(__EXCEPTIONS)) && !defined(__CUDA_ARCH__) && !defined(EIGEN_EXCEPTIONS)
   #define EIGEN_EXCEPTIONS
 #endif
@@ -60,6 +54,14 @@
 // it's where we do all the alignment settings (platform detection and honoring the user's will if he
 // defined e.g. EIGEN_DONT_ALIGN) so it needs to be done before we do anything with vectorization.
 #include "src/Core/util/Macros.h"
+
+// When compiling CUDA with nvcc, pull in math functions from the global
+// namespace.  When compiling CUDA with clang, use the std versions.
+#if defined(__CUDA_ARCH__) && !defined(EIGEN_COMP_CUDA_CLANG)
+  #define EIGEN_USING_STD_MATH(FUNC) using ::FUNC;
+#else
+  #define EIGEN_USING_STD_MATH(FUNC) using std::FUNC;
+#endif
 
 // Disable the ipa-cp-clone optimization flag with MinGW 6.x or newer (enabled by default with -O3)
 // See http://eigen.tuxfamily.org/bz/show_bug.cgi?id=556 for details.
